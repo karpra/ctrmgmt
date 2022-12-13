@@ -1,4 +1,4 @@
-module github.com/karpra/ctrmgmt
+module ctrmgmt
 
 go 1.19
 

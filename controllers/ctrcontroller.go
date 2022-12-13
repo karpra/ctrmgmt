@@ -22,6 +22,9 @@ func GetVersion(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(version)
 }
 
+/*
+ * lists the containers
+ */
 func GetContainers(w http.ResponseWriter, r *http.Request) {
 	var ctrs []models.CtrMgt
 	w.Header().Set("Content-Type", "application/json")
@@ -30,19 +33,20 @@ func GetContainers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-
 	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
 		panic(err)
 	}
-
 	for _, container := range containers {
-		ctrs = append(ctrs, models.CtrMgt{container.ID[:10], container.Names[0][1:], container.Image})
+		ctrs = append(ctrs, models.CtrMgt{container.ID[:10], container.Names[0][1:], container.Image, container.State, container.Status, container.Ports})
 		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
 	}
 	json.NewEncoder(w).Encode(ctrs)
 }
 
+/*
+ * creates and starts the container
+ */
 func CreateContainers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var ctr models.CtrMgt
@@ -83,6 +87,9 @@ func CreateContainers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(ctr)
 }
 
+/*
+ * stops and removes the container
+ */
 func StopContainers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var ctr models.CtrMgt

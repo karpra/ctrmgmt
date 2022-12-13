@@ -27,7 +27,7 @@ func GetVersion(w http.ResponseWriter, r *http.Request) {
  * lists the containers
  */
 func GetContainers(w http.ResponseWriter, r *http.Request) {
-	var ctrs []models.CtrMgt
+	ctrs := make([]models.CtrMgt, 0)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	cli, err := client.NewClientWithOpts(client.FromEnv)
@@ -52,11 +52,19 @@ func CreateContainers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var ctr models.CtrMgt
 	json.NewDecoder(r.Body).Decode(&ctr)
+	ctx := context.Background()
 	cli, err := client.NewEnvClient()
 	if err != nil {
 		fmt.Println("Unable to create docker client")
 		panic(err)
 	}
+	reader, err := cli.ImagePull(ctx, "docker.io/library/"+ctr.Image, types.ImagePullOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	defer reader.Close()
+	//io.Copy(os.Stdout, reader)
 	hostBinding := nat.PortBinding{
 		HostIP:   "0.0.0.0",
 		HostPort: "8000",

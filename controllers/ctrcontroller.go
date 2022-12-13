@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/gorilla/mux"
 )
 
 func GetVersion(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +51,7 @@ func GetContainers(w http.ResponseWriter, r *http.Request) {
 func CreateContainers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var ctr models.CtrMgt
-	//json.NewDecoder(r.Body).Decode(&container)
+	json.NewDecoder(r.Body).Decode(&ctr)
 	cli, err := client.NewEnvClient()
 	if err != nil {
 		fmt.Println("Unable to create docker client")
@@ -73,11 +74,11 @@ func CreateContainers(w http.ResponseWriter, r *http.Request) {
 	cont, err := cli.ContainerCreate(
 		context.Background(),
 		&container.Config{
-			Image: "nginx",
+			Image: ctr.Image,
 		},
 		&container.HostConfig{
 			PortBindings: portBinding,
-		}, networkConfig, nil, "web1")
+		}, networkConfig, nil, ctr.Name)
 	if err != nil {
 		panic(err)
 	}
@@ -92,8 +93,10 @@ func CreateContainers(w http.ResponseWriter, r *http.Request) {
  */
 func StopContainers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var ctr models.CtrMgt
 	ctx := context.Background()
+	vars := mux.Vars(r)
+	name := vars["name"]
+	ctr := models.CtrMgt{Name: name}
 
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
@@ -105,21 +108,15 @@ func StopContainers(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	containerName := "web1"
-
 	for _, container := range containers {
-
-		if containerName == container.Names[0][1:] {
-
+		if name == container.Names[0][1:] {
 			if err := cli.ContainerStop(ctx, container.ID, nil); err != nil {
 				log.Printf("Unable to stop container %s: %s", container.ID, err)
 			}
-
 			removeOptions := types.ContainerRemoveOptions{
 				RemoveVolumes: true,
 				Force:         true,
 			}
-
 			if err := cli.ContainerRemove(ctx, container.ID, removeOptions); err != nil {
 				log.Printf("Unable to remove container: %s", err)
 				//return err

@@ -13,8 +13,8 @@ import (
 func RegisterProductRoutes(router *mux.Router) {
 	router.HandleFunc("/version", controllers.GetVersion).Methods("GET")
 	router.HandleFunc("/api/containers", controllers.GetContainers).Methods("GET")
-	router.HandleFunc("/api/containers/create", controllers.CreateContainers).Methods("GET")
-	router.HandleFunc("/api/containers/stop", controllers.StopContainers).Methods("GET")
+	router.HandleFunc("/api/containers", controllers.CreateContainers).Methods("POST")
+	router.HandleFunc("/api/containers/{name}", controllers.StopContainers).Methods("DELETE")
 	//router.HandleFunc("/api/products/{id}", controllers.UpdateProduct).Methods("PUT")
 	//router.HandleFunc("/api/products/{id}", controllers.DeleteProduct).Methods("DELETE")
 }

@@ -144,7 +144,7 @@ func GetContainerLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	name := vars["name"]
-	ctrs := make([]models.CtrMgt, 0)
+	//ctrs := make([]models.CtrMgt, 0)
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		panic(err)
@@ -176,15 +176,15 @@ func GetContainerLogs(w http.ResponseWriter, r *http.Request) {
 			if err := json.NewDecoder(strings.NewReader(string(content))).Decode(&ctrMgt.Logs); err != nil {
 				//handle error
 			}
-			ctrs = append(ctrs, ctrMgt)
-			log.Println(string(content))
+			//ctrs = append(ctrs, ctrMgt)
+			//log.Println(string(content))
 
 			/*scanner := bufio.NewScanner(content)
 			for scanner.Scan() {
 				fmt.Println(scanner.Text())
 			}*/
 
-			json.NewEncoder(w).Encode(ctrs)
+			json.NewEncoder(w).Encode(string(content))
 
 		}
 	}

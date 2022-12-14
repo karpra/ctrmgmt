@@ -5,8 +5,10 @@ import (
 	"ctrmgmt/models"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -39,7 +41,7 @@ func GetContainers(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	for _, container := range containers {
-		ctrs = append(ctrs, models.CtrMgt{container.ID[:10], container.Names[0][1:], container.Image, container.State, container.Status, container.Ports})
+		ctrs = append(ctrs, models.CtrMgt{Id: container.ID[:10], Name: container.Names[0][1:], Image: container.Image, State: container.State, Status: container.Status, Ports: container.Ports})
 		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
 	}
 	json.NewEncoder(w).Encode(ctrs)
@@ -133,4 +135,58 @@ func StopContainers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(ctr)
+}
+
+/*
+ * stops and removes the container
+ */
+func GetContainerLogs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	name := vars["name"]
+	ctrs := make([]models.CtrMgt, 0)
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		panic(err)
+	}
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, ctr := range containers {
+		if name == ctr.Names[0][1:] {
+			log.Printf("Container Name %s , Id %s\n", name, ctr.ID)
+
+			reader, err := cli.ContainerLogs(context.Background(), ctr.ID, types.ContainerLogsOptions{
+				ShowStdout: true,
+				ShowStderr: true,
+				Follow:     false,
+				Timestamps: false,
+			})
+			if err != nil {
+				panic(err)
+			}
+			defer reader.Close()
+			p := make([]byte, 8)
+			reader.Read(p)
+			content, _ := ioutil.ReadAll(reader)
+			//ctrs = append(ctrs, models.CtrMgt{Logs: string(content)})
+			var ctrMgt models.CtrMgt
+			if err := json.NewDecoder(strings.NewReader(string(content))).Decode(&ctrMgt.Logs); err != nil {
+				//handle error
+			}
+			ctrs = append(ctrs, ctrMgt)
+			log.Println(string(content))
+
+			/*scanner := bufio.NewScanner(content)
+			for scanner.Scan() {
+				fmt.Println(scanner.Text())
+			}*/
+
+			json.NewEncoder(w).Encode(ctrs)
+
+		}
+	}
+
 }

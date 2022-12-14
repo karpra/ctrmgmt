@@ -9,4 +9,5 @@ type CtrMgt struct {
 	State  string       `json:"state,omitempty"`
 	Status string       `json:"status,omitempty"`
 	Ports  []types.Port `json:"ports,omitempty"`
+	Logs   string       `json:"logs,omitempty"`
 }
